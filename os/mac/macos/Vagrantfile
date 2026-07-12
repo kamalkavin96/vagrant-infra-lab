@@ -1,0 +1,55 @@
+Vagrant.configure("2") do |config|
+
+  # macOS guest
+  # macOS Vagrant boxes are usually local/private boxes built on Apple hardware.
+  config.vm.box = ENV.fetch("MACOS_BOX", "local/macos")
+
+  # VM hostname
+  config.vm.hostname = "macos-vagrant"
+
+  # Private network
+  config.vm.network "private_network",
+    ip: "192.168.56.30"
+
+  # VMware Desktop/Fusion configuration
+  config.vm.provider "vmware_desktop" do |vmware|
+    vmware.vmx["displayName"] = "macOS-Vagrant"
+    vmware.vmx["memsize"] = "4096"
+    vmware.vmx["numvcpus"] = "2"
+  end
+
+  # Provisioning
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+    echo "Checking macOS development tools..."
+
+    if xcode-select -p >/dev/null 2>&1; then
+      echo "Xcode Command Line Tools are installed."
+    else
+      echo "Xcode Command Line Tools are not installed."
+      echo "Install them inside the VM with: xcode-select --install"
+    fi
+
+    if command -v brew >/dev/null 2>&1; then
+      echo "Updating Homebrew..."
+      brew update
+
+      echo "Installing basic tools..."
+      brew install \
+        curl \
+        wget \
+        git \
+        vim \
+        nano \
+        telnet \
+        unzip \
+        htop \
+        mc
+    else
+      echo "Homebrew is not installed."
+      echo "Install Homebrew inside the VM if you want package provisioning."
+    fi
+
+    echo "macOS setup completed."
+  SHELL
+
+end

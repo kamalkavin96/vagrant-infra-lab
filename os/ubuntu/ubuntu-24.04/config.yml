@@ -1,0 +1,14 @@
+instance_count: 3
+
+vm:
+  name_prefix: ubuntu-24
+  hostname_prefix: ubuntu
+  box: bento/ubuntu-24.04
+
+resources:
+  memory: 2048
+  cpus: 2
+
+network:
+  base_ip: "192.168.56"
+  start_ip: 10

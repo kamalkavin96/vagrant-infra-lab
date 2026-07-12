@@ -1,24 +1,36 @@
 require "yaml"
 
-config_file = YAML.load_file(
-  File.join(File.dirname(__FILE__), "config.yml")
-)
+CONFIG_FILE = File.join(__dir__, "config.yml")
 
-instance_count = config_file["instance_count"]
+config_file = YAML.load_file(CONFIG_FILE)
 
-vm_config = config_file["vm"]
-resources = config_file["resources"]
-network = config_file["network"]
+instance_count = config_file.fetch("instance_count")
+
+vm_config = config_file.fetch("vm")
+resources = config_file.fetch("resources")
+network = config_file.fetch("network")
 
 Vagrant.configure("2") do |config|
 
-  config.vm.box = vm_config["box"]
+  config.vm.box = vm_config.fetch("box")
+
+  config.vm.boot_timeout = vm_config.fetch(
+    "boot_timeout",
+    600
+  )
 
   (1..instance_count).each do |i|
 
-    vm_name = "#{vm_config["name_prefix"]}-#{format('%02d', i)}"
-    hostname = "#{vm_config["hostname_prefix"]}-#{format('%02d', i)}"
-    ip_address = "#{network["base_ip"]}.#{network["start_ip"] + i - 1}"
+    instance_id = format("%02d", i)
+
+    vm_name = "#{vm_config.fetch("name_prefix")}-#{instance_id}"
+
+    hostname = "#{vm_config.fetch("hostname_prefix")}-#{instance_id}"
+
+    ip_address = [
+      network.fetch("base_ip"),
+      network.fetch("start_ip") + i - 1
+    ].join(".")
 
     config.vm.define vm_name do |node|
 
@@ -30,13 +42,25 @@ Vagrant.configure("2") do |config|
       node.vm.provider "virtualbox" do |vb|
 
         vb.name = vm_name
-        vb.memory = resources["memory"]
-        vb.cpus = resources["cpus"]
+
+        vb.memory = resources.fetch(
+          "memory",
+          2048
+        )
+
+        vb.cpus = resources.fetch(
+          "cpus",
+          2
+        )
 
       end
 
       node.vm.provision "shell",
-        path: "scripts/setup.sh"
+        path: File.join(
+          __dir__,
+          "scripts",
+          "setup.sh"
+        )
 
     end
 

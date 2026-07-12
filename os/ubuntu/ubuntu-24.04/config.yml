@@ -4,6 +4,7 @@ vm:
   name_prefix: ubuntu-24
   hostname_prefix: ubuntu
   box: bento/ubuntu-24.04
+  boot_timeout: 600
 
 resources:
   memory: 2048

@@ -1,1 +1,42 @@
-need to update
+Vagrant.configure("2") do |config|
+
+  # Ubuntu 24.04 LTS
+  config.vm.box = "bento/ubuntu-24.04"
+
+  # VM hostname
+  config.vm.hostname = "ubuntu-24-04"
+
+  # Private network
+  config.vm.network "private_network",
+    ip: "192.168.56.10"
+
+  # VirtualBox configuration
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "Ubuntu-24.04-Server"
+    vb.memory = 4096
+    vb.cpus = 2
+  end
+
+  # Provisioning
+  config.vm.provision "shell", inline: <<-SHELL
+    echo "Updating Ubuntu packages..."
+    sudo apt-get update
+
+    echo "Installing basic tools..."
+    sudo apt-get install -y \
+      curl \
+      wget \
+      git \
+      vim \
+      nano \
+      net-tools \
+      iputils-ping \
+      telnet \
+      unzip \
+      htop \
+      mc 
+
+    echo "Ubuntu server setup completed."
+  SHELL
+
+end

@@ -2,6 +2,7 @@ require "yaml"
 
 CONFIG_FILE = File.join(__dir__, "config.yml")
 config_file = YAML.load_file(CONFIG_FILE)
+
 instance_count = config_file.fetch("instance_count")
 
 vm_config = config_file.fetch("vm")
@@ -11,13 +12,27 @@ network = config_file.fetch("network")
 Vagrant.configure("2") do |config|
 
   config.vm.box = vm_config.fetch("box")
-  config.vm.boot_timeout = vm_config.fetch("boot_timeout", 600)
+
+  # Wait up to 15 minutes for VM boot
+  config.vm.boot_timeout = vm_config.fetch("boot_timeout", 900)
+
+  # SSH configuration
+  config.ssh.connect_timeout = 30
+  config.ssh.keep_alive = true
+
+  # Retry provisioning if SSH temporarily disconnects
+  config.vm.provision "shell",
+    path: File.join(__dir__, "scripts", "setup.sh"),
+    max_retries: 10,
+    retry_delay: 10
 
   (1..instance_count).each do |i|
 
     instance_id = format("%02d", i)
+
     vm_name = "#{vm_config.fetch("name_prefix")}-#{instance_id}"
     hostname = "#{vm_config.fetch("hostname_prefix")}-#{instance_id}"
+
     ip_address = [
       network.fetch("base_ip"),
       network.fetch("start_ip") + i - 1
@@ -38,9 +53,6 @@ Vagrant.configure("2") do |config|
         vb.linked_clone = true
 
       end
-
-      node.vm.provision "shell",
-        path: File.join(__dir__, "scripts", "setup.sh")
 
     end
 
